@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from datetime import datetime
 
@@ -45,16 +46,27 @@ def fill_missing(df):
     return filled
 
 
-def analyze_csv(path):
-    df = pd.read_csv(path)
+def clean_and_export(csv_path, outdir):
+    os.makedirs(outdir, exist_ok=True)
+
+    df = pd.read_csv(csv_path)
     df.columns = slugify_cols(df.columns)
 
     trimmed = trim_strings(df)
     numeric = attempt_numeric_coerce(df)
     filled = fill_missing(df)
 
+    base = os.path.splitext(os.path.basename(csv_path))[0]
+    cleaned_path = os.path.join(outdir, f"{base}_cleaned.csv")
+    summary_path = os.path.join(outdir, f"{base}_summary.txt")
+
+    df.to_csv(cleaned_path, index=False)
+
     report = []
+    report.append("CSV CLEAN REPORT")
+    report.append("=" * 20)
     report.append(f"Generated: {datetime.now().isoformat(timespec='seconds')}")
+    report.append("")
     report.append(f"Rows: {len(df)}")
     report.append(f"Columns: {len(df.columns)}")
     report.append("")
@@ -62,8 +74,11 @@ def analyze_csv(path):
     report.append(f"Numeric conversions: {numeric}")
     report.append(f"Filled missing values: {filled}")
 
-    return df, "\n".join(report)
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(report))
+
+    return cleaned_path, summary_path
 
 
 if __name__ == "__main__":
-    print("CSV cleaner core logic ready.")
+    print("CSV cleaner now exports cleaned data and reports.")
